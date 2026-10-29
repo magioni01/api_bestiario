@@ -1,0 +1,103 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Bestiário - Apenas um Show",
+    "version": "2.0.0",
+    "description": "API completa (CRUD) para registar, consultar, atualizar e apagar criaturas."
+  },
+  "servers": [
+    {
+      "url": "http://localhost/api_bestiario",
+      "description": "Servidor Local XAMPP"
+    }
+  ],
+  "paths": {
+    "/api.php": {
+      "get": {
+        "summary": "Lista todas as criaturas registadas",
+        "responses": {
+          "200": {
+            "description": "Lista carregada com sucesso."
+          }
+        }
+      },
+      "post": {
+        "summary": "Regista uma nova criatura",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": { "type": "string", "example": "Pairulito" },
+                  "especie": { "type": "string", "example": "Homem-pirulito" },
+                  "habitat": { "type": "string", "example": "A Casa do Parque" },
+                  "nivel_ameaca": { "type": "string", "example": "Inofensivo" },
+                  "imagem_url": { "type": "string", "example": "https://link-da-imagem.com/foto.jpg" },
+                  "descricao": { "type": "string", "example": "Paga as coisas com chupa-chupas." }
+                },
+                "required": ["nome", "especie"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Criatura adicionada com sucesso!"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualiza os dados de uma criatura existente",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer", "example": 1 },
+                  "nome": { "type": "string", "example": "Pairulito (Editado)" },
+                  "especie": { "type": "string", "example": "Homem-pirulito" },
+                  "habitat": { "type": "string", "example": "A Casa do Parque" },
+                  "nivel_ameaca": { "type": "string", "example": "Inofensivo" },
+                  "imagem_url": { "type": "string", "example": "https://link-da-imagem.com/foto.jpg" },
+                  "descricao": { "type": "string", "example": "Nova descrição aqui." }
+                },
+                "required": ["id", "nome", "especie"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Criatura atualizada com sucesso!"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Apaga uma criatura",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "integer", "example": 1 }
+                },
+                "required": ["id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Criatura apagada com sucesso!"
+          }
+        }
+      }
+    }
+  }
+}

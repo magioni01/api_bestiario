@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena Apenas um Show - Collector's Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --box-bg: #0f172a;
+            --border-retro: #38bdf8;
+            --text-main: #f8fafc;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: #020617; 
+            color: var(--text-main);
+            padding: 20px; 
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container { max-width: 980px; width: 100%; margin: auto; }
+
+        .btn-voltar {
+            background: rgba(30, 41, 59, 0.9);
+            color: white; border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 15px; border-radius: 8px; cursor: pointer;
+            text-decoration: none; display: inline-block; margin-bottom: 15px; font-weight: 600; font-size: 14px;
+        }
+        .btn-voltar:hover { background: #3b82f6; }
+
+        /* Moedas e Header Info */
+        .header-info {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(15, 23, 42, 0.8); border: 1px solid #38bdf8;
+            padding: 10px 20px; border-radius: 10px; margin-bottom: 15px; font-weight: 600;
+        }
+        .moeda-badge { color: #f59e0b; font-family: 'Press Start 2P'; font-size: 11px; }
+
+        /* Screen Shake */
+        @keyframes tremer {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-10px, 5px); }
+            50% { transform: translate(10px, -5px); }
+            75% { transform: translate(-8px, -3px); }
+            100% { transform: translate(0, 0); }
+        }
+        .screen-shake { animation: tremer 0.3s ease-in-out; }
+
+        /* Palco de Batalha */
+        .palco-batalha {
+            width: 100%; height: 430px; border: 4px solid #38bdf8; border-radius: 14px;
+            position: relative; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            background-size: cover; background-position: center; transition: background 0.5s ease;
+        }
+        .cenario-parque { background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80'); }
+        .cenario-mansao { background: linear-gradient(rgba(10,0,20,0.4), rgba(10,0,20,0.6)), url('https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80'); }
+        .cenario-espaco { background: linear-gradient(rgba(0,0,20,0.6), rgba(20,0,40,0.8)), url('https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&q=80'); }
+
+        .status-inimigo, .status-heroi {
+            position: absolute; background: rgba(15, 23, 42, 0.9); border: 2px solid;
+            padding: 10px 15px; border-radius: 10px; width: 260px; text-align: left;
+        }
+        .status-inimigo { top: 20px; right: 20px; border-color: #ef4444; }
+        .status-heroi { bottom: 20px; left: 20px; border-color: #3b82f6; }
+
+        .nome-combatente { font-weight: 700; font-size: 13px; margin-bottom: 3px; display: flex; justify-content: space-between; }
+        .nivel-combatente { color: #f59e0b; font-size: 11px; }
+
+        .barra-hp-fundo, .barra-mana-fundo {
+            width: 100%; background: #334155; height: 8px; border-radius: 4px; margin-top: 3px; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .barra-hp-atual { height: 100%; background: #10b981; width: 100%; transition: width 0.4s ease; }
+        .barra-mana-atual { height: 100%; background: #3b82f6; width: 0%; transition: width 0.4s ease; }
+        .texto-stats { font-size: 9px; color: #94a3b8; text-align: right; margin-top: 2px; }
+
+        .sprite-inimigo { position: absolute; top: 35px; right: 60px; width: 120px; height: 120px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.6)); }
+        .sprite-heroi { position: absolute; bottom: 30px; left: 60px; width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.6)); }
+
+        /* Textos Flutuantes de Dano (Floating Combat Text) */
+        @keyframes flutuarTexto {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.3); opacity: 0; }
+        }
+        .floating-text {
+            position: absolute; font-family: 'Press Start 2P'; font-size: 14px; font-weight: bold;
+            animation: flutuarTexto 0.9s ease-out forwards; z-index: 30; pointer-events: none;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        /* Painel de Controlo */
+        .painel-controle { display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-top: 15px; height: 160px; }
+        .caixa-dialogo {
+            background: var(--box-bg); border: 3px solid var(--border-retro); border-radius: 10px;
+            padding: 15px 20px; font-family: 'Press Start 2P', monospace; font-size: 10px; line-height: 1.6; color: #f8fafc; display: flex; align-items: center;
+        }
+        .menu-comandos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-comando {
+            background: linear-gradient(135deg, #1e293b, #0f172a); border: 2px solid #38bdf8;
+            color: white; font-weight: 600; border-radius: 8px; cursor: pointer; font-size: 11px; transition: all 0.2s;
+        }
+        .btn-comando:hover:not(:disabled) { background: #3b82f6; transform: translateY(-2px); }
+        .btn-comando:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* QTE Aleatório */
+        .btn-esquiva-aleatoria {
+            position: absolute; background: #f59e0b; color: #000; border: 3px solid #fff; padding: 12px 24px;
+            font-size: 15px; font-weight: 800; border-radius: 10px; cursor: pointer; z-index: 20;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8); display: none;
+        }
+
+        /* Abas e Painel de Loja / Missões */
+        .abas-jogo { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .btn-aba-jogo { background: #1e293b; border: 1px solid #38bdf8; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-aba-jogo.ativo { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="btn-voltar">⬅️ Voltar ao Bestiário Principal</a>
+
+        <div class="header-info">
+            <div>⚡ MODO CAMPAÑA & ARENA ULTIMATE</div>
+            <div class="moeda-badge">🪙 Moedas: <span id="txtMoedas">100</span></div>
+        </div>
+
+        <!-- Navegação de Abas -->
+        <div class="abas-jogo">
+            <button class="btn-aba-jogo ativo" onclick="mudarAbaMenu('batalha')">🎮 Batalha Livre</button>
+            <button class="btn-aba-jogo" onclick="mudarAbaMenu('missoes')">📜 Missões de Chefes</button>
+            <button class="btn-aba-jogo" onclick="mudarAbaMenu('loja')">🛒 Loja do Parque</button>
+            <button class="btn-aba-jogo" onclick="mudarAbaMenu('conquistas')">🏆 Conquistas</button>
+        </div>
+
+        <!-- ABA 1: BATALHA LIVRE -->
+        <div id="abaBatalha" style="background: rgba(15, 23, 42, 0.95); border: 2px solid #38bdf8; padding: 30px; border-radius: 14px; text-align: center;">
+            <h2 style="color: #38bdf8; margin-top: 0;">SELECIONAR COMBATENTES</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; text-align: left;">
+                <div>
+                    <label><b>O seu Herói:</b></label>
+                    <select id="selHeroi" style="width:100%; padding:10px; margin-top:5px; background:#0f172a; color:white; border-radius:6px; border:1px solid #38bdf8;"></select>
+                </div>
+                <div>
+                    <label><b>Oponente:</b></label>
+                    <select id="selInimigo" style="width:100%; padding:10px; margin-top:5px; background:#0f172a; color:white; border-radius:6px; border:1px solid #ef4444;"></select>
+                </div>
+            </div>
+            <button onclick="iniciarBatalhaLivre()" style="background: #10b981; color: white; border: none; padding: 14px 25px; font-size: 16px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%;">🔥 INICIAR DUELO</button>
+        </div>
+
+        <!-- ABA 2: MISSÕES -->
+        <div id="abaMissoes" style="display: none; background: rgba(15, 23, 42, 0.95); border: 2px solid #f59e0b; padding: 30px; border-radius: 14px;">
+            <h2 style="color: #f59e0b; margin-top: 0; text-align: center;">📜 MODO CAMPANHA: CHEFES DO PARQUE</h2>
+            <div style="display: grid; gap: 15px; margin-top: 20px;" id="listaMissoesContainer">
+                <!-- Gerado por JS -->
+            </div>
+        </div>
+
+        <!-- ABA 3: LOJA -->
+        <div id="abaLoja" style="display: none; background: rgba(15, 23, 42, 0.95); border: 2px solid #10b981; padding: 30px; border-radius: 14px;">
+            <h2 style="color: #10b981; margin-top: 0; text-align: center;">🛒 LOJA DE PASSIVOS DO PARQUE</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;" id="listaLojaContainer"></div>
+        </div>
+
+        <!-- ABA 4: CONQUISTAS -->
+        <div id="abaConquistas" style="display: none; background: rgba(15, 23, 42, 0.95); border: 2px solid #a855f7; padding: 30px; border-radius: 14px;">
+            <h2 style="color: #a855f7; margin-top: 0; text-align: center;">🏆 SALÃO DE TROFÉUS</h2>
+            <div style="display: grid; gap: 10px; margin-top: 20px;" id="listaConquistasContainer"></div>
+        </div>
+
+        <!-- PALCO DE BATALHA (Oculto inicialmente) -->
+        <div id="secaoPalco" style="display: none;">
+            <div class="palco-batalha cenario-parque" id="palcoVisual">
+                <!-- Inimigo -->
+                <div class="status-inimigo">
+                    <div class="nome-combatente"><span id="txtNomeInimigo">Inimigo</span> <span id="txtElementoInimigo" style="font-size:10px; color:#38bdf8;">[AR]</span></div>
+                    <div class="barra-hp-fundo"><div id="hpBarInimigo" class="barra-hp-atual"></div></div>
+                    <div id="hpTextoInimigo" class="texto-stats">HP: 100/100</div>
+                </div>
+                <img id="imgSpriteInimigo" class="sprite-inimigo" src="" alt="">
+
+                <!-- Herói -->
+                <div class="status-heroi">
+                    <div class="nome-combatente"><span id="txtNomeHeroi">Herói</span> <span id="txtNivelHeroi" class="nivel-combatente">Lv.1</span></div>
+                    <div class="barra-hp-fundo"><div id="hpBarHeroi" class="barra-hp-atual"></div></div>
+                    <div id="hpTextoHeroi" class="texto-stats">HP: 100/100</div>
+                    <div style="font-size: 9px; margin-top:3px; color:#38bdf8;">MANA ESPECIAL:</div>
+                    <div class="barra-mana-fundo"><div id="manaBarHeroi" class="barra-mana-atual"></div></div>
+                </div>
+                <img id="imgSpriteHeroi" class="sprite-heroi" src="" alt="">
+
+                <!-- QTE Dinâmico Aleatório -->
+                <button id="btnEsquivaAleatoria" class="btn-esquiva-aleatoria" onclick="esquivarAtaque()">🏃‍♂️ DESVIAR!</button>
+            </div>
+
+            <!-- Comandos -->
+            <div class="painel-controle">
+                <div id="caixaTexto" class="caixa-dialogo">O combate começou!</div>
+                <div class="menu-comandos" id="menuBotoesAcao">
+                    <button class="btn-comando" onclick="acaoAtacar('investida')">⚔️ Investida</button>
+                    <button class="btn-comando" onclick="acaoAtacar('especial')" id="btnEspecial" disabled>🔥 Especial (50% EN)</button>
+                    <button class="btn-comando" onclick="acaoPocao()">🧪 Poção (<span id="numPocoes">2</span>)</button>
+                    <button class="btn-comando" onclick="fugirBatalha()" style="border-color: #ef4444; color: #fca5a5;">🏳️ Fugir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let listaGlobal = [];
+        let moedas = parseInt(localStorage.getItem('parque_moedas')) || 100;
+        let passivos = JSON.parse(localStorage.getItem('parque_passivos')) || { colete: false, cafe: false, pocaoExtra: false };
+        let conquistas = JSON.parse(localStorage.getItem('parque_conquistas')) || { noob: false, mestre: false, criticos: 0 };
+
+        let estado = {
+            heroi: null,
+            inimigo: null,
+            hpHeroiMax: 100,
+            hpHeroi: 100,
+            hpInimigoMax: 100,
+            hpInimigo: 100,
+            manaHeroi: 0,
+            nivelHeroi: 1,
+            pocoes: passivos.pocaoExtra ? 4 : 2,
+            turno: 'heroi',
+            esquivaAtiva: false,
+            timerEsquiva: null,
+            modoCampanha: false
+        };
+
+        const elementos = ['AR', 'CAOS', 'MÍSTICO', 'CÓSMICO'];
+        const missoesCampanha = [
+            { id: 1, nome: "Estágio 1: Pato Mutante do Lago", hp: 80, elemento: "AR", premio: 40 },
+            { id: 2, nome: "Estágio 2: Duende do Jardim Sombrio", hp: 120, elemento: "CAOS", premio: 80 },
+            { id: 3, nome: "Estágio 3: Guardião Temporal Cósmico", hp: 180, elemento: "CÓSMICO", premio: 150 }
+        ];
+
+        document.getElementById('txtMoedas').innerText = moedas;
+
+        function mudarAbaMenu(aba) {
+            document.querySelectorAll('.btn-aba-jogo').forEach(b => b.classList.remove('ativo'));
+            document.getElementById('abaBatalha').style.display = 'none';
+            document.getElementById('abaMissoes').style.display = 'none';
+            document.getElementById('abaLoja').style.display = 'none';
+            document.getElementById('abaConquistas').style.display = 'none';
+            document.getElementById('secaoPalco').style.display = 'none';
+
+            if (aba === 'batalha') { document.getElementById('abaBatalha').style.display = 'block'; event.target.classList.add('ativo'); }
+            else if (aba === 'missoes') { renderizarMissoes(); document.getElementById('abaMissoes').style.display = 'block'; event.target.classList.add('ativo'); }
+            else if (aba === 'loja') { renderizarLoja(); document.getElementById('abaLoja').style.display = 'block'; event.target.classList.add('ativo'); }
+            else if (aba === 'conquistas') { renderizarConquistas(); document.getElementById('abaConquistas').style.display = 'block'; event.target.classList.add('ativo'); }
+        }
+
+        function somRetrô(tipo) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                if (tipo === 'hit') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                    osc.start(); osc.stop(ctx.currentTime + 0.15);
+                } else if (tipo === 'vitoria') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(440, ctx.currentTime);
+                    setTimeout(() => osc.frequency.setValueAtTime(659, ctx.currentTime), 150);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.start(); osc.stop(ctx.currentTime + 0.35);
+                }
+            } catch(e) {}
+        }
+
+        function tremerTela() {
+            const palco = document.getElementById('palcoVisual');
+            palco.classList.add('screen-shake');
+            setTimeout(() => palco.classList.remove('screen-shake'), 300);
+        }
+
+        function criarFloatingText(texto, cor, alvoId) {
+            const alvo = document.getElementById(alvoId);
+            const rect = alvo.getBoundingClientRect();
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = texto;
+            el.style.color = cor;
+            el.style.left = (rect.left + rect.width / 2) + 'px';
+            el.style.top = (rect.top + 20) + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 900);
+        }
+
+        async function carregarDadosCompletos() {
+            try {
+                const res = await fetch('api.php');
+                listaGlobal = await res.json();
+                const sH = document.getElementById('selHeroi');
+                const sI = document.getElementById('selInimigo');
+                sH.innerHTML = ''; sI.innerHTML = '';
+                listaGlobal.forEach(c => {
+                    sH.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+                    sI.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+                });
+                if (listaGlobal.length > 1) sI.selectedIndex = 1;
+            } catch(e) {}
+        }
+
+        function renderizarMissoes() {
+            const container = document.getElementById('listaMissoesContainer');
+            container.innerHTML = '';
+            missoesCampanha.forEach(m => {
+                container.innerHTML += `
+                    <div style="background: rgba(30,41,59,0.8); border: 1px solid #f59e0b; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${m.nome}</strong><br>
+                            <span style="font-size: 11px; color: #94a3b8;">Elemento: ${m.elemento} | HP: ${m.hp} | Prémio: 🪙 ${m.premio}</span>
+                        </div>
+                        <button onclick="iniciarMissaoChefe(${m.id})" style="background: #f59e0b; color: #000; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lutar</button>
+                    </div>`;
+            });
+        }
+
+        function renderizarLoja() {
+            const container = document.getElementById('listaLojaContainer');
+            container.innerHTML = `
+                <div style="background: rgba(30,41,59,0.8); padding: 15px; border-radius: 8px; border: 1px solid #10b981;">
+                    <h4>🛡️ Colete do Benson</h4>
+                    <p style="font-size:11px; color:#94a3b8;">Reduz todo o dano recebido em 15% permanentemente.</p>
+                    <button onclick="comprarPassivo('colete', 100)" style="background:${passivos.colete?'#475569':'#10b981'}; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:${passivos.colete?'default':'pointer'};" ${passivos.colete?'disabled':''}>${passivos.colete?'Adquirido':'Comprar (🪙 100)'}</button>
+                </div>
+                <div style="background: rgba(30,41,59,0.8); padding: 15px; border-radius: 8px; border: 1px solid #10b981;">
+                    <h4>🧪 Poção Extra Master</h4>
+                    <p style="font-size:11px; color:#94a3b8;">Aumenta o limite de poções de 2 para 4 por batalha.</p>
+                    <button onclick="comprarPassivo('pocaoExtra', 75)" style="background:${passivos.pocaoExtra?'#475569':'#10b981'}; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:${passivos.pocaoExtra?'default':'pointer'};" ${passivos.pocaoExtra?'disabled':''}>${passivos.pocaoExtra?'Adquirido':'Comprar (🪙 75)'}</button>
+                </div>`;
+        }
+
+        function comprarPassivo(item, custo) {
+            if (moedas >= custo && !passivos[item]) {
+                moedas -= custo;
+                passivos[item] = true;
+                localStorage.setItem('parque_moedas', moedas);
+                localStorage.setItem('parque_passivos', JSON.stringify(passivos));
+                document.getElementById('txtMoedas').innerText = moedas;
+                renderizarLoja();
+                alert("Item comprado com sucesso!");
+            } else {
+                alert("Moedas insuficientes ou item já adquirido!");
+            }
+        }
+
+        function renderizarConquistas() {
+            const container = document.getElementById('listaConquistasContainer');
+            container.innerHTML = `
+                <div style="background:rgba(30,41,59,0.8); padding:12px; border-radius:6px;">🏆 <b>Primeira Vitória:</b> ${conquistas.noob ? '✅ Desbloqueado' : '❌ Bloqueado'}</div>
+                <div style="background:rgba(30,41,59,0.8); padding:12px; border-radius:6px;">🏆 <b>Mestre dos Chefes:</b> ${conquistas.mestre ? '✅ Desbloqueado' : '❌ Bloqueado'}</div>`;
+        }
+
+        function iniciarBatalhaLivre() {
+            const idH = document.getElementById('selHeroi').value;
+            const idI = document.getElementById('selInimigo').value;
+            if (idH === idI) { alert("Escolha combatentes diferentes!"); return; }
+
+            const heroiObj = listaGlobal.find(c => c.id == idH);
+            const inimigoObj = listaGlobal.find(c => c.id == idI);
+            configurarCombate(heroiObj, inimigoObj, false, 100, "AR", 50);
+        }
+
+        function iniciarMissaoChefe(idMissao) {
+            const missao = missoesCampanha.find(m => m.id === idMissao);
+            const heroiObj = listaGlobal[0]; // Pega o primeiro por defeito
+            const inimigoFicticio = { nome: missao.nome, imagem_url: '' };
+            configurarCombate(heroiObj, inimigoFicticio, true, missao.hp, missao.elemento, missao.premio);
+        }
+
+        function configurarCombate(herói, inimigo, ehCampanha, hpInimigoMax, elementoInimigo, premioMoedas) {
+            estado.heroi = herói;
+            estado.inimigo = inimigo;
+            estado.hpHeroiMax = 100 + (estado.nivelHeroi - 1) * 20;
+            estado.hpHeroi = estado.hpHeroiMax;
+            estado.hpInimigoMax = hpInimigoMax;
+            estado.hpInimigo = hpInimigoMax;
+            estado.manaHeroi = 0;
+            estado.pocoes = passivos.pocaoExtra ? 4 : 2;
+            estado.modoCampanha = ehCampanha;
+            estado.premioAtual = premioMoedas;
+            estado.elementoInimigo = elementoInimigo;
+            estado.elementoHeroi = elementos[Math.floor(Math.random() * elementos.length)];
+
+            document.getElementById('txtNomeHeroi').innerText = estado.heroi.nome;
+            document.getElementById('txtNivelHeroi').innerText = `Lv.${estado.nivelHeroi}`;
+            document.getElementById('txtNomeInimigo').innerText = estado.inimigo.nome;
+            document.getElementById('txtElementoInimigo').innerText = `[${estado.elementoInimigo}]`;
+            document.getElementById('numPocoes').innerText = estado.pocoes;
+
+            document.getElementById('imgSpriteHeroi').src = estado.heroi.imagem_url || '';
+            document.getElementById('imgSpriteInimigo').src = estado.inimigo.imagem_url || '';
+
+            document.getElementById('abaBatalha').style.display = 'none';
+            document.getElementById('abaMissoes').style.display = 'none';
+            document.getElementById('abaLoja').style.display = 'none';
+            document.getElementById('abaConquistas').style.display = 'none';
+            document.getElementById('secaoPalco').style.display = 'block';
+
+            atualizarHpVisual();
+            escreverTexto(`Duelo iniciado! Seu elemento: [${estado.elementoHeroi}] vs Inimigo: [${estado.elementoInimigo}].`);
+            setTimeout(iniciarEsquivaAleatoriaQTE, 1500);
+        }
+
+        function escreverTexto(txt) {
+            document.getElementById('caixaTexto').innerText = txt;
+        }
+
+        function atualizarHpVisual() {
+            let pctH = Math.max(0, (estado.hpHeroi / estado.hpHeroiMax) * 100);
+            let pctI = Math.max(0, (estado.hpInimigo / estado.hpInimigoMax) * 100);
+
+            document.getElementById('hpBarHeroi').style.width = pctH + '%';
+            document.getElementById('hpTextoHeroi').innerText = `HP: ${Math.round(estado.hpHeroi)}/${estado.hpHeroiMax}`;
+
+            document.getElementById('hpBarInimigo').style.width = pctI + '%';
+            document.getElementById('hpTextoInimigo').innerText = `HP: ${Math.round(estado.hpInimigo)}/${estado.hpInimigoMax}`;
+
+            document.getElementById('manaBarHeroi').style.width = estado.manaHeroi + '%';
+            document.getElementById('btnEspecial').disabled = estado.manaHeroi < 50 || estado.turno !== 'heroi';
+        }
+
+        function acaoAtacar(tipo) {
+            if (estado.turno !== 'heroi') return;
+
+            let dano = tipo === 'especial' ? Math.floor(Math.random() * 25) + 30 : Math.floor(Math.random() * 14) + 12;
+            if (tipo === 'especial') { estado.manaHeroi -= 50; tremerTela(); }
+            else { estado.manaHeroi = Math.min(100, estado.manaHeroi + 30); }
+
+            // Vantagem elemental simples
+            let bonusCritico = Math.random() < 0.25;
+            if (bonusCritico) { dano = Math.round(dano * 1.5); }
+
+            somRetrô('hit');
+            estado.hpInimigo -= dano;
+            atualizarHpVisual();
+
+            criarFloatingText(`-${dano}${bonusCritico?' CRÍTICO!':''}`, bonusCritico ? '#ef4444' : '#38bdf8', 'imgSpriteInimigo');
+            escreverTexto(`Atacou causando ${dano} de dano!`);
+
+            if (estado.hpInimigo <= 0) {
+                somRetrô('vitoria');
+                moedas += estado.premioAtual || 25;
+                localStorage.setItem('parque_moedas', moedas);
+                document.getElementById('txtMoedas').innerText = moedas;
+                conquistas.noob = true;
+                if (estado.modoCampanha) conquistas.mestre = true;
+                localStorage.setItem('parque_conquistas', JSON.stringify(conquistas));
+
+                setTimeout(() => {
+                    escreverTexto(`🏆 Vitória! Ganhou 🪙 ${estado.premioAtual || 25} moedas!`);
+                    document.getElementById('menuBotoesAcao').style.display = 'none';
+                    estado.nivelHeroi++;
+                }, 1200);
+                return;
+            }
+
+            estado.turno = 'inimigo';
+            document.getElementById('menuBotoesAcao').style.display = 'none';
+            setTimeout(iniciarEsquivaAleatoriaQTE, 1500);
+        }
+
+        function acaoPocao() {
+            if (estado.turno !== 'heroi' || estado.pocoes <= 0) return;
+            estado.hpHeroi = Math.min(estado.hpHeroiMax, estado.hpHeroi + 50);
+            estado.pocoes--;
+            document.getElementById('numPocoes').innerText = estado.pocoes;
+            atualizarHpVisual();
+            criarFloatingText('+50 HP', '#10b981', 'imgSpriteHeroi');
+            escreverTexto(`Recuperou 50 HP com poção!`);
+
+            estado.turno = 'inimigo';
+            document.getElementById('menuBotoesAcao').style.display = 'none';
+            setTimeout(iniciarEsquivaAleatoriaQTE, 1500);
+        }
+
+        function fugirBatalha() {
+            window.location.reload();
+        }
+
+        function iniciarEsquivaAleatoriaQTE() {
+            estado.esquivaAtiva = true;
+            const btnQTE = document.getElementById('btnEsquivaAleatoria');
+            const randomX = Math.floor(Math.random() * 60) + 15;
+            const randomY = Math.floor(Math.random() * 60) + 20;
+            btnQTE.style.left = randomX + '%';
+            btnQTE.style.top = randomY + '%';
+            btnQTE.style.display = 'block';
+
+            escreverTexto(`⚠️ Inimigo atacando! Clique no botão que apareceu!`);
+
+            estado.timerEsquiva = setTimeout(() => {
+                if (estado.esquivaAtiva) {
+                    estado.esquivaAtiva = false;
+                    btnQTE.style.display = 'none';
+                    let danoInimigo = Math.floor(Math.random() * 18) + 15;
+                    if (passivos.colete) danoInimigo = Math.round(danoInimigo * 0.85); // 15% menos dano
+
+                    estado.hpHeroi -= danoInimigo;
+                    tremerTela();
+                    somRetrô('hit');
+                    atualizarHpVisual();
+                    criarFloatingText(`-${danoInimigo}`, '#ef4444', 'imgSpriteHeroi');
+                    escreverTexto(`💥 Falhou a esquiva! Sofreu ${danoInimigo} de dano.`);
+                    verificarFimTurnoInimigo();
+                }
+            }, 1200);
+        }
+
+        function esquivarAtaque() {
+            if (!estado.esquivaAtiva) return;
+            clearTimeout(estado.timerEsquiva);
+            estado.esquivaAtiva = false;
+            document.getElementById('btnEsquivaAleatoria').style.display = 'none';
+            criarFloatingText('ESQUIVOU!', '#f59e0b', 'imgSpriteHeroi');
+            escreverTexto(`✨ Esquiva perfeita! Zero dano sofrido.`);
+            verificarFimTurnoInimigo();
+        }
+
+        function verificarFimTurnoInimigo() {
+            if (estado.hpHeroi <= 0) {
+                escreverTexto(`💀 O seu herói desmaiou... Fim de jogo.`);
+                return;
+            }
+            estado.turno = 'heroi';
+            document.getElementById('menuBotoesAcao').style.display = 'grid';
+            atualizarHpVisual();
+            escreverTexto(`Sua vez de contra-atacar!`);
+        }
+
+        carregarDadosCompletos();
+    </script>
+</body>
+</html>
